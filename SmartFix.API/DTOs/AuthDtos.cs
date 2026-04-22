@@ -4,8 +4,7 @@ public record RegisterRequest(
     string FullName,
     string Email,
     string Password,
-    string Department,
-    string Role = "Employee"
+    string Department
 );
 
 public record LoginRequest(
@@ -20,5 +19,6 @@ public record AuthResponse(
     string Role,
     string Department,
     string Level,
-    int UserId
+    int UserId,
+    int? RoleId
 );

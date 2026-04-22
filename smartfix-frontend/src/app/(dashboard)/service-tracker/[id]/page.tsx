@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api, Ticket, ApprovalStep } from "@/lib/api";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 function PriorityBadge({ priority }: { priority: string }) {
   const colors: Record<string, string> = {
@@ -75,6 +76,7 @@ function formatDate(dateStr: string) {
 export default function TicketDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const id = Number(params.id);
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,6 +106,11 @@ export default function TicketDetailPage() {
   }
 
   const approvalChain: ApprovalStep[] = ticket.approvalChain ?? [];
+
+  // First pending step = current queue approver
+  const queueStep = approvalChain.find((s) => s.status === "Pending");
+  // Step belonging to the logged-in user
+  const myStep = approvalChain.find((s) => s.assigneeName === user?.fullName);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -160,25 +167,50 @@ export default function TicketDetailPage() {
       {/* Approval Chain */}
       {approvalChain.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-base font-bold">Approval Chain</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-bold">Approval Chain</h2>
+            {queueStep && (
+              <span className="text-xs text-muted-foreground">
+                Queue: <span className="font-semibold text-foreground">{queueStep.assigneeName}</span>
+                <span className="ml-1 text-primary font-semibold">(L{queueStep.level})</span>
+              </span>
+            )}
+          </div>
           <div className="flex items-start gap-3 flex-wrap">
-            {approvalChain.map((step, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <div className="bg-card border border-border rounded-lg p-4 min-w-[140px]">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">
-                    Level {step.level}
-                  </p>
-                  <p className="text-sm font-semibold mb-2">{step.assigneeName}</p>
-                  <ApprovalStepBadge status={step.status} />
-                  {step.note && (
-                    <p className="text-xs text-muted-foreground mt-1.5 italic">{step.note}</p>
+            {approvalChain.map((step, idx) => {
+              const isMyStep = step.assigneeName === myStep?.assigneeName;
+              const isQueueStep = step === queueStep;
+              return (
+                <div key={idx} className="flex items-center gap-3">
+                  <div
+                    className={`rounded-lg p-4 min-w-[140px] relative ${
+                      isMyStep
+                        ? "bg-violet-600/10 border-2 border-violet-500/60"
+                        : isQueueStep
+                        ? "bg-amber-600/10 border-2 border-amber-500/50"
+                        : "bg-card border border-border"
+                    }`}
+                  >
+                    {isQueueStep && (
+                      <span className="absolute -top-2.5 left-3 text-[9px] bg-amber-500 text-black font-bold px-1.5 py-0.5 rounded uppercase">
+                        Queue
+                      </span>
+                    )}
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">
+                      Level {step.level}
+                    </p>
+                    <p className="text-sm font-semibold mb-2">{step.assigneeName}</p>
+                    <ApprovalStepBadge status={step.status} />
+                    {step.note && (
+                      <p className="text-xs text-muted-foreground mt-1.5 italic">{step.note}</p>
+                    )}
+                  </div>
+                  {idx < approvalChain.length - 1 && (
+                    <span className="text-muted-foreground text-lg">→</span>
                   )}
                 </div>
-                {idx < approvalChain.length - 1 && (
-                  <span className="text-muted-foreground text-lg">→</span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

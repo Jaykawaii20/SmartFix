@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartFix.API.Data;
 
@@ -11,9 +12,11 @@ using SmartFix.API.Data;
 namespace SmartFix.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260422025050_Added Routing")]
+    partial class AddedRouting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -146,70 +149,6 @@ namespace SmartFix.API.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("SmartFix.API.Models.Role", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("SmartFix.API.Models.RolePermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("CanCreate")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CanDelete")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CanEdit")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CanView")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Module")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("RolePermissions");
-                });
-
             modelBuilder.Entity("SmartFix.API.Models.RoutingRule", b =>
                 {
                     b.Property<int>("Id")
@@ -221,9 +160,6 @@ namespace SmartFix.API.Migrations
                     b.Property<string>("AssignedLevel")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("AssigneeId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -242,8 +178,6 @@ namespace SmartFix.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssigneeId");
 
                     b.ToTable("RoutingRules");
                 });
@@ -436,15 +370,14 @@ namespace SmartFix.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("RoleId")
-                        .HasColumnType("int");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
-
-                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
                 });
@@ -489,27 +422,6 @@ namespace SmartFix.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SmartFix.API.Models.RolePermission", b =>
-                {
-                    b.HasOne("SmartFix.API.Models.Role", "Role")
-                        .WithMany("Permissions")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("SmartFix.API.Models.RoutingRule", b =>
-                {
-                    b.HasOne("SmartFix.API.Models.User", "Assignee")
-                        .WithMany()
-                        .HasForeignKey("AssigneeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Assignee");
-                });
-
             modelBuilder.Entity("SmartFix.API.Models.Ticket", b =>
                 {
                     b.HasOne("SmartFix.API.Models.User", "AssignedTo")
@@ -528,26 +440,9 @@ namespace SmartFix.API.Migrations
                     b.Navigation("Requester");
                 });
 
-            modelBuilder.Entity("SmartFix.API.Models.User", b =>
-                {
-                    b.HasOne("SmartFix.API.Models.Role", "UserRole")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("UserRole");
-                });
-
             modelBuilder.Entity("SmartFix.API.Models.EvalFormConfig", b =>
                 {
                     b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("SmartFix.API.Models.Role", b =>
-                {
-                    b.Navigation("Permissions");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("SmartFix.API.Models.Ticket", b =>

@@ -28,7 +28,7 @@ export const api = {
   auth: {
     login: (data: { email: string; password: string }) =>
       request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(data) }),
-    register: (data: { fullName: string; email: string; password: string; department: string; role?: string }) =>
+    register: (data: { fullName: string; email: string; password: string; department: string }) =>
       request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(data) }),
   },
   tickets: {
@@ -53,6 +53,48 @@ export const api = {
     list: () => request<{ notifications: Notification[]; unreadCount: number }>("/api/notifications"),
     markRead: (id: number) => request<void>(`/api/notifications/${id}/read`, { method: "PATCH" }),
   },
+  maintenance: {
+    getStaffLists: () => request<MaintenanceStaffData>("/api/maintenance/staff-lists"),
+    updateStaffLists: (data: MaintenanceStaffData) =>
+      request<void>("/api/maintenance/staff-lists", { method: "PUT", body: JSON.stringify(data) }),
+    getRoutingRules: () => request<RoutingRule[]>("/api/maintenance/routing"),
+    createRoutingRule: (data: Omit<RoutingRule, "id" | "assigneeName">) =>
+      request<RoutingRule>("/api/maintenance/routing", { method: "POST", body: JSON.stringify(data) }),
+    deleteRoutingRule: (id: number) =>
+      request<void>(`/api/maintenance/routing/${id}`, { method: "DELETE" }),
+    getTicketOptions: () => request<TicketInfoOptions>("/api/maintenance/ticket-options"),
+    updateTicketOptions: (data: TicketInfoOptions) =>
+      request<void>("/api/maintenance/ticket-options", { method: "PUT", body: JSON.stringify(data) }),
+    getEvalForm: () => request<EvalForm>("/api/maintenance/eval-form"),
+    updateEvalForm: (data: EvalForm) =>
+      request<void>("/api/maintenance/eval-form", { method: "PUT", body: JSON.stringify(data) }),
+  },
+  approvals: {
+    list: () => request<{ tickets: Ticket[]; count: number }>("/api/approvals"),
+    transferL2: (id: number) =>
+      request<void>(`/api/approvals/${id}/transfer`, { method: "POST" }),
+    resolve: (id: number, data: ResolveTicketRequest) =>
+      request<void>(`/api/approvals/${id}/resolve`, { method: "POST", body: JSON.stringify(data) }),
+    cancel: (id: number) =>
+      request<void>(`/api/approvals/${id}/cancel`, { method: "POST" }),
+  },
+  roles: {
+    list: () => request<Role[]>("/api/roles"),
+    get: (id: number) => request<Role>(`/api/roles/${id}`),
+    create: (data: { name: string; description: string; permissions: RolePermission[] }) =>
+      request<Role>("/api/roles", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: { name: string; description: string; permissions: RolePermission[] }) =>
+      request<Role>(`/api/roles/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: number) => request<void>(`/api/roles/${id}`, { method: "DELETE" }),
+  },
+  users: {
+    list: () => request<UserRecord[]>("/api/users"),
+    myPermissions: () => request<RolePermission[]>("/api/users/me/permissions"),
+    updateRole: (id: number, roleId: number) =>
+      request<UserRecord>(`/api/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ roleId }) }),
+    toggleActive: (id: number) =>
+      request<UserRecord>(`/api/users/${id}/toggle-active`, { method: "PATCH" }),
+  },
 };
 
 // Types
@@ -64,6 +106,7 @@ export interface AuthResponse {
   department: string;
   level: string;
   userId: number;
+  roleId?: number;
 }
 
 export interface ApprovalStep {
@@ -144,4 +187,97 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
   ticketNumber?: string;
+}
+
+export interface MaintenanceStaffData {
+  l1: string[];
+  l2: string[];
+  l3: string[];
+  l4: string[];
+  departments: string[];
+  businessUnits: string[];
+}
+
+export interface TicketInfoOptions {
+  priorities: string[];
+  supportCategories: string[];
+  problemCategories: string[];
+  subCategories: string[];
+  severities: string[];
+  personnelLevels: string[];
+}
+
+export interface EvalFormQuestion {
+  id: number;
+  text: string;
+  type: string;
+}
+
+export interface EvalForm {
+  title: string;
+  introMessage: string;
+  questions: EvalFormQuestion[];
+}
+
+export interface RoutingRule {
+  id: number;
+  name: string;
+  description?: string;
+  formType?: string;
+  department?: string;
+  assignedLevel: string;
+  assigneeId?: number;
+  assigneeName?: string;
+}
+
+export interface ResolveTicketRequest {
+  priority: string;
+  supportCategory: string;
+  problemCategory: string;
+  subCategory: string;
+  severity: string;
+  personnelLevel: string;
+  troubleshootingDescription: string;
+}
+
+export const MODULES = [
+  "dashboard",
+  "service_tracker",
+  "approvals",
+  "maintenance",
+  "reports",
+  "status",
+  "users",
+  "roles",
+] as const;
+
+export type ModuleName = (typeof MODULES)[number];
+
+export interface RolePermission {
+  module: string;
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  isDefault: boolean;
+  isSystem: boolean;
+  permissions: RolePermission[];
+}
+
+export interface UserRecord {
+  id: number;
+  fullName: string;
+  email: string;
+  department: string;
+  level: string;
+  roleId?: number;
+  roleName?: string;
+  isActive: boolean;
+  createdAt: string;
 }

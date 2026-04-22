@@ -69,6 +69,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
+builder.Services.AddScoped<IApprovalsService, ApprovalsService>();
+builder.Services.AddScoped<IRolesService, RolesService>();
 
 var app = builder.Build();
 

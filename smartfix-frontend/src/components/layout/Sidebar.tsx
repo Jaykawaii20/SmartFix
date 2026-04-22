@@ -3,20 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, Ticket, Activity, BarChart3, Settings } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import {
+  LayoutDashboard, Ticket, Activity, BarChart3, Settings,
+  CheckSquare, Wrench, Users, ShieldCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { section: "OVERVIEW", items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }] },
-  {
-    section: "OPERATIONS",
-    items: [
-      { label: "Service Tracker", href: "/service-tracker", icon: Ticket },
-      { label: "Status", href: "/status", icon: Activity },
-    ],
-  },
-  { section: "ANALYTICS", items: [{ label: "Reports", href: "/reports", icon: BarChart3 }] },
-];
 
 interface SidebarProps {
   ticketBadge?: number;
@@ -24,11 +17,44 @@ interface SidebarProps {
 
 export function Sidebar({ ticketBadge = 0 }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
+  const [approvalsBadge, setApprovalsBadge] = useState(0);
+
+  const isITStaff = !!(user?.level && ["L1", "L2", "L3", "L4"].includes(user.level));
+
+  useEffect(() => {
+    if (!isITStaff && !can("approvals")) return;
+    api.approvals.list()
+      .then((res) => setApprovalsBadge(res.count))
+      .catch(() => {});
+  }, [isITStaff, user]);
 
   const initials = user?.fullName
     ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "??";
+
+  type NavItem = { label: string; href: string; icon: React.ElementType; badge?: number };
+  type NavSection = { section: string; items: NavItem[] };
+
+  const operationsItems: NavItem[] = [
+    ...(can("service_tracker") ? [{ label: "Service Tracker", href: "/service-tracker", icon: Ticket, badge: ticketBadge }] : []),
+    ...((isITStaff || can("approvals")) ? [{ label: "Approvals", href: "/approvals", icon: CheckSquare, badge: approvalsBadge }] : []),
+    ...(can("status") ? [{ label: "Status", href: "/status", icon: Activity }] : []),
+  ];
+
+  const navSections: NavSection[] = [
+    ...(can("dashboard") ? [{ section: "OVERVIEW", items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }] }] : []),
+    ...(operationsItems.length > 0 ? [{ section: "OPERATIONS", items: operationsItems }] : []),
+    ...(can("reports") ? [{ section: "ANALYTICS", items: [{ label: "Reports", href: "/reports", icon: BarChart3 }] }] : []),
+    ...(can("maintenance") || can("users") || can("roles") ? [{
+      section: "SETTINGS",
+      items: [
+        ...(can("maintenance") ? [{ label: "Maintenance", href: "/maintenance", icon: Wrench }] : []),
+        ...(can("users") ? [{ label: "Users", href: "/users", icon: Users }] : []),
+        ...(can("roles") ? [{ label: "Roles", href: "/roles", icon: ShieldCheck }] : []),
+      ],
+    }] : []),
+  ];
 
   return (
     <aside className="w-[180px] shrink-0 flex flex-col h-screen bg-sidebar border-r border-sidebar-border fixed left-0 top-0 z-30">
@@ -42,12 +68,11 @@ export function Sidebar({ ticketBadge = 0 }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-5">
-        {navItems.map(({ section, items }) => (
+        {navSections.map(({ section, items }) => (
           <div key={section}>
             <p className="text-[10px] font-semibold text-muted-foreground px-2 mb-1 tracking-wider">{section}</p>
-            {items.map(({ label, href, icon: Icon }) => {
+            {items.map(({ label, href, icon: Icon, badge = 0 }) => {
               const active = pathname === href || pathname.startsWith(href + "/");
-              const badge = label === "Service Tracker" && ticketBadge > 0 ? ticketBadge : 0;
               return (
                 <Link
                   key={href}

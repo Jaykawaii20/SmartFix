@@ -24,8 +24,9 @@ public class DashboardService : IDashboardService
     {
         var tickets = await _db.Tickets.Include(t => t.Requester).Include(t => t.AssignedTo).ToListAsync();
         var staff = await _db.Users
-            .Where(u => u.Role != "Employee")
+            .Include(u => u.UserRole)
             .Include(u => u.AssignedTickets)
+            .Where(u => u.Level != string.Empty && u.Level != null)
             .ToListAsync();
 
         var dist = new TicketDistributionDto(
@@ -110,12 +111,28 @@ public class DashboardService : IDashboardService
     }
 
     private static TicketDto MapToTicketDto(Models.Ticket t) => new(
-        t.Id, t.TicketNumber, t.RequesterEmail,
-        t.Requester?.FullName ?? "",
-        t.Department, t.FormType, t.Application,
-        t.Priority, t.Category, t.Description,
-        t.Status, t.SlaStatus, t.SlaHours, t.Level,
+        t.Id,
+        t.TicketNumber,
+        t.ScaNumber,
+        t.RequesterEmail,
+        t.Requester?.FullName ?? string.Empty,
+        t.Department,
+        t.BusinessUnit,
+        t.FormType,
+        t.Application,
+        t.Priority,
+        t.Category,
+        t.Description,
+        t.Status,
+        t.SlaStatus,
+        t.SlaHours,
+        t.Level,
         t.AssignedTo?.FullName,
-        t.CreatedAt, t.SlaDeadline
+        t.CreatedAt,
+        t.SlaDeadline,
+        t.ApprovalSteps
+            .OrderBy(s => s.Level)
+            .Select(s => new ApprovalStepDto(s.Level, s.AssigneeName, s.Status, s.Note))
+            .ToList()
     );
 }

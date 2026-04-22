@@ -3,6 +3,7 @@ namespace SmartFix.API.DTOs;
 public record CreateTicketRequest(
     string RequesterEmail,
     string Department,
+    string? BusinessUnit,
     string FormType,
     string Application,
     string Priority,
@@ -13,9 +14,11 @@ public record CreateTicketRequest(
 public record TicketDto(
     int Id,
     string TicketNumber,
+    string? ScaNumber,
     string RequesterEmail,
     string RequesterName,
     string Department,
+    string? BusinessUnit,
     string FormType,
     string Application,
     string Priority,
@@ -27,7 +30,8 @@ public record TicketDto(
     string Level,
     string? AssignedToName,
     DateTime CreatedAt,
-    DateTime SlaDeadline
+    DateTime SlaDeadline,
+    List<ApprovalStepDto> ApprovalChain
 );
 
 public record UpdateTicketStatusRequest(
